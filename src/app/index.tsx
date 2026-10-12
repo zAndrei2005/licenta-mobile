@@ -1,18 +1,34 @@
 import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
+interface AssetDetails {
+  id: number;
+  name: string;
+  ticker: string;
+  asset_type: string;
+  currency: string;
+}
+
+interface PortfolioPosition {
+  id: number;
+  quantity: string; 
+  purchase_price: string;
+  asset_details: AssetDetails;
+}
+
 interface Portfolio {
   id: number;
   name: string;
   description: string;
-  target_allocation: Record<string, number>; // modif ca acm primesc json
+  target_allocation: Record<string, number>;
+  positions: PortfolioPosition[];
 }
 
 export default function App() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
 
   useEffect(() => {
-    fetch('http://192.168.1.167:8000/api/portfolios/')
+    fetch('https://thermal-backlash-nutty.ngrok-free.dev/api/portfolios/')
       .then((response) => response.json())
       .then((data: Portfolio[]) => setPortfolios(data))
       .catch((error) => console.error("Eroare la fetch:", error));
@@ -38,6 +54,25 @@ export default function App() {
                 </Text>
               ))}
             </View>
+
+            {item.positions && item.positions.length > 0 && (
+              <View style={styles.positionsContainer}>
+                <Text style={styles.positionsTitle}>Dețineri actuale:</Text>
+                {item.positions.map((pos) => (
+                  <View key={pos.id} style={styles.positionRow}>
+                    <View>
+                      <Text style={styles.positionName}>{pos.asset_details.name} ({pos.asset_details.ticker})</Text>
+                      <Text style={styles.positionPrice}>
+                        Preț achiziție: {pos.purchase_price ? `${pos.purchase_price} ${pos.asset_details.currency}` : 'N/A'}
+                      </Text>
+                    </View>
+                    <View style={styles.quantityBadge}>
+                      <Text style={styles.quantityText}>{parseFloat(pos.quantity).toString()} buc.</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
       />
@@ -62,7 +97,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     padding: 15,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -85,7 +120,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 6,
-    marginTop: 5,
+    marginBottom: 15,
   },
   allocationTitle: {
     fontSize: 14,
@@ -98,5 +133,43 @@ const styles = StyleSheet.create({
     color: '#333',
     marginLeft: 5,
     marginBottom: 2,
+  },
+  positionsContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+    paddingTop: 12,
+  },
+  positionsTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  positionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  positionName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#222',
+  },
+  positionPrice: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 2,
+  },
+  quantityBadge: {
+    backgroundColor: '#F0F0F0',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+  },
+  quantityText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#444',
   }
 });
