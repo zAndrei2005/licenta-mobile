@@ -21,12 +21,24 @@ interface PortfolioPosition {
   purchase_price_usd: number | null;
 }
 
+interface RebalanceItem {
+  category: string;
+  ticker: string;
+  target_pct: number;
+  current_pct: number;
+  deviation_pct: number;
+  action: 'BUY' | 'SELL' | 'HOLD';
+  amount_usd: number;
+  units: number | null;
+}
+
 interface Portfolio {
   id: number;
   name: string;
   description: string;
   target_allocation: Record<string, number>;
   positions: PortfolioPosition[];
+  rebalance_plan?: RebalanceItem[];
 }
 
 export default function App() {
@@ -116,12 +128,35 @@ export default function App() {
               <Text style={styles.portfolioDesc}>{item.description}</Text>
               
               <View style={styles.allocationBadge}>
-                <Text style={styles.allocationTitle}>Alocare țintă:</Text>
-                {item.target_allocation && Object.entries(item.target_allocation).map(([key, value]) => (
-                  <Text key={key} style={styles.allocationText}>
-                    • {key}: {value}%
-                  </Text>
-                ))}
+                <Text style={styles.allocationTitle}>Alocare țintă & Plan Rebalansare:</Text>
+                
+                {item.rebalance_plan && item.rebalance_plan.length > 0 ? (
+                  item.rebalance_plan.map((reb) => (
+                    <View key={reb.category} style={styles.rebalanceRow}>
+                      <View style={styles.rebalanceInfo}>
+                        <Text style={styles.allocationText}>
+                          • <Text style={{ fontWeight: 'bold' }}>{reb.category}</Text>: {reb.current_pct}% (Țintă: {reb.target_pct}%)
+                        </Text>
+                        {reb.action !== 'HOLD' && (
+                          <Text style={[
+                            styles.rebalanceActionText,
+                            { color: reb.action === 'BUY' ? '#2E7D32' : '#C62828' }
+                          ]}>
+                            {reb.action === 'BUY' ? '➕ Cumpără: ' : '➖ Vinde: '}
+                            {reb.units !== null ? `${reb.units} buc. ` : ''}
+                            (~{reb.amount_usd} USD)
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  item.target_allocation && Object.entries(item.target_allocation).map(([key, value]) => (
+                    <Text key={key} style={styles.allocationText}>
+                      • {key}: {value}%
+                    </Text>
+                  ))
+                )}
               </View>
 
               {item.positions && item.positions.length > 0 && (
@@ -301,5 +336,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     marginTop: 2,
+  },
+  rebalanceRow: {
+    marginBottom: 6,
+  },
+  rebalanceInfo: {
+    flexDirection: 'column',
+  },
+  rebalanceActionText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 12,
+    marginTop: 1,
   },
 });
